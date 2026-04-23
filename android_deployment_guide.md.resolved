@@ -1,0 +1,114 @@
+# Android Deployment Guide: From Finish to Play Store
+*Based on the AgenticSMS Rollout*
+
+This guide documents the exact steps and technical learnings discovered during the deployment of AgenticSMS.
+
+---
+
+## Part 1: Finalizing the App
+Before building the release, ensure the identity is correct.
+
+### 1. Rebranding & Versioning
+- **Application ID:** Update `namespace` and `applicationId` in [app/build.gradle.kts](file:///Users/abhinavakashyabh/yourdata_message/android/app/build.gradle.kts) (e.g., `com.agentic.sms`).
+- **App Label:** Update `android:label` in [AndroidManifest.xml](file:///Users/abhinavakashyabh/yourdata_message/android/app/src/main/AndroidManifest.xml) or `app_name` in [strings.xml](file:///Users/abhinavakashyabh/yourdata_message/android/app/src/main/res/values/strings.xml).
+- **Versioning:** Increment `versionCode` (integer) and `versionName` (string) for every new upload.
+
+### 2. Branding Assets
+- **Adaptive Icon:** Create [res/mipmap-anydpi-v26/ic_launcher.xml](file:///Users/abhinavakashyabh/yourdata_message/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml). Use a solid color background and a centered foreground vector/PNG to follow modern Android specifications.
+- **Splash Screen:** Use the `androidx.core:core-splashscreen` library. Call `installSplashScreen()` in your [MainActivity](file:///Users/abhinavakashyabh/yourdata_message/android/app/src/main/java/com/yourdata/rcs/MainActivity.kt#34-57) before `setContent`.
+
+---
+
+## Part 2: Generating Release Builds
+
+### 1. Signing
+- **Keystore:** Generate a `.jks` file using `keytool` or Android Studio.
+- **Gradle Config:** Securely store credentials in `local.properties` or environment variables. Reference them in the `signingConfigs` block.
+
+### 2. Build Commands
+```bash
+./gradlew bundleRelease  # Generates .aab for Play Store
+./gradlew assembleRelease # Generates .apk for local testing
+```
+
+---
+
+## Part 3: Visual Asset Generation (Paparazzi Method)
+To avoid manual screenshots on multiple devices, use **app.cash.paparazzi**.
+
+### 1. Setup Learnings
+- **Jetifier Conflict:** If you see `AmbiguousStringJetifierException`, disable Jetifier in [gradle.properties](file:///Users/abhinavakashyabh/yourdata_message/android/gradle.properties): `android.enableJetifier=false`.
+- **JDK Requirement:** Paparazzi 1.3.4 requires **JDK 17**.
+
+### 2. Implementation
+- Create a [ScreenshotTest.kt](file:///Users/abhinavakashyabh/yourdata_message/android/app/src/test/java/com/yourdata/rcs/ScreenshotTest.kt) in [src/test](file:///Users/abhinavakashyabh/yourdata_message/android/app/src/test).
+- Create realistic `@Preview` composables with mock data to avoid empty screens.
+- **Aspect Ratio Compliance:** Force exact resolutions using `DeviceConfig` to meet Play Store requirements:
+    - **Phone:** 1080x1920 (9:16)
+    - **Tablets:** 1920x1080 or 2560x1440 (16:9 Landscape)
+- **Constraint:** Use `useDeviceResolution = true` in the Paparazzi rule to prevent the library from clamping images to 1000px.
+
+---
+
+## Part 4: Play Store Requirements Reference
+
+### 1. Static Assets
+| Asset | Required Dimensions |
+| :--- | :--- |
+| **App Icon** | 512 x 512 (PNG/JPG) |
+| **Feature Graphic** | 1024 x 500 (PNG/JPG) |
+| **Screenshots** | Min side 1080px for promotion eligibility |
+
+### 2. Legal Documents
+- **Privacy Policy:** Must state exactly what data is collected. For local apps, emphasize "Local-only, no server storage, no third-party sharing".
+
+### 3. Environment & SDK Setup
+- **SDK Path:** If Gradle fails to find the Android SDK, create `local.properties` with `sdk.dir=/path/to/your/sdk`.
+- **JDK Standardization:** Ensure `JAVA_HOME` points to JDK 17 for modern Gradle compatibility.- **Target API:** Google Play periodically raises the minimum target API. Always check the latest requirements. (e.g., API 35/Android 15 is the standard as of April 2026).
+- **Debug Symbols:** For apps with native libraries or ProGuard enabled, add `ndk.debugSymbolLevel = "FULL"` in your release build type to avoid symbolize warnings in the console.
+
+---
+
+## Part 6: Google Play Console Browser Workflow
+After generating your [.aab](file:///Users/abhinavakashyabh/yourdata_message/android/app/build/outputs/bundle/release/app-release.aab) and assets, follow these steps on the [Play Console](https://play.google.com/console/).
+
+### 1. Initial Setup
+- **Create App:** Select "Android", "App", and "Free/Paid".
+- **Set up your app:** Complete the "Initial tasks" checklist on the Dashboard. This includes setting the App Name, Category, and providing contact details.
+
+### 2. Main Store Listing
+- **App Details:** Enter your Title (max 30 characters), Short description (max 80), and Full description (max 4000).
+- **Graphics:** Upload your:
+    - App Icon (Exactly 512x512 PNG/JPG)
+    - Feature Graphic (Exactly 1024x500 PNG/JPG)
+    - Phone Screenshots (At least 4, 9:16 or 16:9, min 1080px for promotion)
+    - Tablet Screenshots (7" and 10", 16:9 Landscape is recommended).
+
+### 3. App Content & Data Safety (CRITICAL)
+- **Privacy Policy:** Paste the link to your policy. *Tip: For open-source or local apps, GitHub Gist is a great free hosting option.*
+- **Data Safety Questionnaire:**
+    - "Does your app collect or share user data?" -> Select "No".
+    - You must clarify that SMS data is processed locally and never stored externally.
+- **Sensitive Permissions:** If using `READ_SMS`, you must complete the "Permissions Declaration Form". Select "Default SMS handler" as the core functionality if applicable.
+- **Symbol Files:** If prompted by the Play Console about "native code" or "debug symbols", ensure your AAB includes the `native-debug-symbols.zip` or that you've configured `ndk.debugSymbolLevel = "FULL"`.
+
+### 4. Rollout & Testing
+- **Internal Testing:** Upload your [.aab](file:///Users/abhinavakashyabh/yourdata_message/android/app/build/outputs/bundle/release/app-release.aab). Changes here are available immediately to your internal list.
+- **Closed Testing (Alpha):** This is required for Production access on new accounts. You need **20 testers** enrolled for **14 consecutive days**.
+- **Review Process:** Every production release (or sensitive permission change) takes 2-7 days for Google to review.
+
+---
+
+## Part 7: Lessons Learned & Troubleshooting
+
+### 💡 Technical Learnings
+1. **Aspect Ratio Errors:** Play Console is very strict about 16:9 or 9:16. Even being 1 pixel off (like 16:10) can cause asset rejection.
+2. **Empty Previews:** Never take screenshots of empty states. Populate your previews with local mock data using the same domain models as the app.
+3. **Headless Generation:** Paparazzi is faster than an emulator but simulates layout. Verify the "shrinkToRoot" behavior if your images look too small.
+4. **Permissions Policy:** SMS apps require a "Declaration Form" in the Play Console explaining why you need `READ_SMS`.
+5. **Jetifier Issues:** Modern Compose libraries often clash with legacy Jetifier transformations. Disabling it is often the safest path for Paparazzi.
+6. **ProGuard Preservation:** To make crash reports readable, ensure your [proguard-rules.pro](file:///Users/abhinavakashyabh/yourdata_message/android/app/proguard-rules.pro) includes `-keepattributes SourceFile,LineNumberTable`.
+7. **Target SDK Warnings:** If using a newer API (like 35) with an older AGP, you may need `android.suppressUnsupportedCompileSdk=35` in [gradle.properties](file:///Users/abhinavakashyabh/yourdata_message/android/gradle.properties).
+
+---
+*Created by Antigravity AI Assistant.*
