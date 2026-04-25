@@ -136,7 +136,7 @@ fun WebhookLogItem(log: WebhookLogEntity) {
                 ) {
                     Text(
                         text = log.requestBody,
-                        style = MaterialTheme.typography.bodyExtraSmall(),
+                        style = getBodyExtraSmall(),
                         modifier = Modifier.padding(8.dp),
                         fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
                         fontSize = 11.sp
@@ -172,4 +172,4 @@ fun WebhookLogItem(log: WebhookLogEntity) {
 }
 
 @Composable
-fun MaterialTheme.typography.bodyExtraSmall() = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp)
+fun getBodyExtraSmall() = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp)
