@@ -19,7 +19,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun WebhookSettingsScreen(
     viewModel: NotificationViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onHistoryClick: () -> Unit
 ) {
     var url by remember { mutableStateOf("") }
     var secret by remember { mutableStateOf("") }
@@ -27,7 +28,7 @@ fun WebhookSettingsScreen(
     var targetBuckets by remember { mutableStateOf(setOf<BucketType>()) }
     val scope = rememberCoroutineScope()
 
-     LaunchedEffect(Unit) {
+    LaunchedEffect(Unit) {
         val settings = viewModel.getWebhookSettings()
         if (settings != null) {
             url = settings.url
@@ -44,6 +45,11 @@ fun WebhookSettingsScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    TextButton(onClick = onHistoryClick) {
+                        Text("History")
                     }
                 }
             )

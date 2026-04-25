@@ -56,6 +56,14 @@ class MainActivity : ComponentActivity() {
                     composable("settings") {
                         WebhookSettingsScreen(
                             viewModel = viewModel,
+                            onBack = { navController.popBackStack() },
+                            onHistoryClick = { navController.navigate("history") }
+                        )
+                    }
+                    composable("history") {
+                        val logs by viewModel.webhookLogs.collectAsState()
+                        com.yournotifications.ui.settings.WebhookHistoryScreen(
+                            logs = logs,
                             onBack = { navController.popBackStack() }
                         )
                     }
