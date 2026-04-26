@@ -41,6 +41,8 @@ class NotificationListener : NotificationListenerService() {
             packageName
         }
 
+        Log.d("NotificationListener", "New notification arrived: $packageName | Title: $title")
+        
         val bucket = classifier.classify(packageName, title, text)
 
         scope.launch {
@@ -59,10 +61,12 @@ class NotificationListener : NotificationListenerService() {
             if (lastNotification != null && 
                 lastNotification.title == title && 
                 lastNotification.text == text) {
-                Log.d("NotificationListener", "Skipping duplicate notification from $packageName")
+                Log.i("NotificationListener", "Suppressed duplicate notification from $packageName (Title: $title)")
                 return@launch
             }
 
+            Log.d("NotificationListener", "Processing notification: $packageName")
+            
             val entity = NotificationEntity(
                 packageName = packageName,
                 appName = appName,

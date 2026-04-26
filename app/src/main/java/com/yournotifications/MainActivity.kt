@@ -22,6 +22,13 @@ import com.yournotifications.ui.notifications.NotificationListScreen
 import com.yournotifications.ui.notifications.NotificationViewModel
 import com.yournotifications.ui.theme.YourNotificationsTheme
 import dagger.hilt.android.AndroidEntryPoint
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 
 import com.yournotifications.ui.settings.WebhookSettingsScreen
 
@@ -38,20 +45,46 @@ class MainActivity : ComponentActivity() {
                 val selectedBucket by viewModel.selectedBucket.collectAsState()
                 val apps by viewModel.trackedApps.collectAsState()
 
+                val isListenerEnabled = remember { mutableStateOf(true) }
+                
+                LaunchedEffect(Unit) {
+                    val enabledListeners = Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
+                    isListenerEnabled.value = enabledListeners?.contains(packageName) ?: false
+                }
+
                 NavHost(navController = navController, startDestination = "list") {
                     composable("list") {
-                        NotificationListScreen(
-                            groupedNotifications = groupedNotifications,
-                            selectedBucket = selectedBucket,
-                            onBucketSelected = { viewModel.selectBucket(it) },
-                            onSettingsClick = { 
-                                navController.navigate("settings")
-                            },
-                            onAppManagementClick = {
-                                navController.navigate("apps")
-                            },
-                            onDeleteNotification = { viewModel.deleteNotification(it) }
-                        )
+                        val context = LocalContext.current
+                        Column {
+                            if (!isListenerEnabled.value) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.errorContainer,
+                                    modifier = Modifier.padding(16.dp).clickable {
+                                        context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                                    },
+                                    shape = MaterialTheme.shapes.medium
+                                ) {
+                                    Text(
+                                        "Notification Listener is disabled. Tap to enable it in system settings.",
+                                        modifier = Modifier.padding(16.dp),
+                                        color = MaterialTheme.colorScheme.onErrorContainer,
+                                        style = MaterialTheme.typography.labelLarge
+                                    )
+                                }
+                            }
+                            NotificationListScreen(
+                                groupedNotifications = groupedNotifications,
+                                selectedBucket = selectedBucket,
+                                onBucketSelected = { viewModel.selectBucket(it) },
+                                onSettingsClick = { 
+                                    navController.navigate("settings")
+                                },
+                                onAppManagementClick = {
+                                    navController.navigate("apps")
+                                },
+                                onDeleteNotification = { viewModel.deleteNotification(it) }
+                            )
+                        }
                     }
                     composable("settings") {
                         WebhookSettingsScreen(
