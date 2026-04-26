@@ -35,6 +35,9 @@ interface NotificationDao {
 
     @Query("DELETE FROM notifications WHERE id = :id")
     suspend fun deleteNotification(id: Long)
+
+    @Query("SELECT * FROM notifications WHERE packageName = :packageName ORDER BY timestamp DESC LIMIT 1")
+    suspend fun getLatestNotificationForApp(packageName: String): NotificationEntity?
 }
 
 @Dao

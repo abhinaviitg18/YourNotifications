@@ -54,6 +54,15 @@ class NotificationListener : NotificationListenerService() {
                 return@launch
             }
 
+            // Duplicate suppression: Compare with last notification for this app
+            val lastNotification = repository.getLatestNotificationForApp(packageName)
+            if (lastNotification != null && 
+                lastNotification.title == title && 
+                lastNotification.text == text) {
+                Log.d("NotificationListener", "Skipping duplicate notification from $packageName")
+                return@launch
+            }
+
             val entity = NotificationEntity(
                 packageName = packageName,
                 appName = appName,

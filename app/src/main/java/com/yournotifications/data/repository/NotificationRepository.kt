@@ -53,4 +53,7 @@ class NotificationRepository @Inject constructor(
     suspend fun getApp(packageName: String) = appDao.getApp(packageName)
 
     suspend fun deleteNotification(id: Long) = notificationDao.deleteNotification(id)
+
+    suspend fun getLatestNotificationForApp(packageName: String) =
+        notificationDao.getLatestNotificationForApp(packageName)
 }

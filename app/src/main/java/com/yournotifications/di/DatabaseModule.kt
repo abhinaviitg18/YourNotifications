@@ -23,7 +23,7 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "your_notifications.db"
-        ).fallbackToDestructiveMigration()
+        ).addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3)
             .build()
     }
 
